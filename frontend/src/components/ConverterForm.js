@@ -62,7 +62,7 @@ const ConverterForm = () => {
     };
 
     return (
-        <div className="min-h-screen bg-gray-900 flex items-center justify-center px-4">
+        <div className="min-h-screen bg-gray-400 flex items-center justify-center px-4">
             <div className="max-w-5xl w-full bg-gray-800/40 backdrop-blur-md border border-gray-700 rounded-2xl p-8 shadow-xl">
                 
                 <h1 className="text-3xl font-bold mb-6 text-center text-white">
