@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import axios from "axios";
+import API_BASE_URL from "../config";
 
 const ConverterForm = () => {
     const [input, setInput] = useState("");
@@ -45,14 +46,19 @@ const ConverterForm = () => {
             alert("Please enter or upload content");
             return;
         }
-
+    
         const endpoint =
             mode === "y2j"
-                ? "http://127.0.0.1:5000/convert/y2j"
-                : "http://127.0.0.1:5000/convert/j2y";
-
-        const res = await axios.post(endpoint, { content: input });
-        setOutput(res.data.converted);
+                ? `${API_BASE_URL}/convert/y2j`
+                : `${API_BASE_URL}/convert/j2y`;
+    
+        try {
+            const res = await axios.post(endpoint, { content: input });
+            setOutput(res.data.converted);
+        } catch (err) {
+            console.error("Error:", err);
+            alert("Conversion failed!");
+        }
     };
 
     return (
