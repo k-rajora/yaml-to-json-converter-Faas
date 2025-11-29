@@ -1,0 +1,82 @@
+pipeline {
+    agent any 
+
+    environment {
+        AWS_DEFAULT_REGION = "ap-south-1"
+        LAMBDA_FUNC_NAME = "yaml-2-json"
+        SCANNER_HOME = tool 'SonarScanner' 
+    }
+
+    stages {
+    
+        stage('Checkout & Prep') {
+            steps {
+                deleteDir() 
+                sh 'git config --global --add safe.directory "*"'
+                checkout([
+                    $class: 'GitSCM',
+                    branches: [[name: '*/main']],
+                    userRemoteConfigs: [[url: 'https://github.com/you_repo.git']],
+                    extensions: [[$class: 'SparseCheckoutPaths', sparseCheckoutPaths: [[path: 'backend']]]]
+                ])
+                script {
+                    if (fileExists('backend')) {
+                        sh "mv backend/* . && rm -rf backend"
+                    }
+                }
+            }
+        }
+
+
+        stage('Security & Quality') {
+            steps {
+                script {
+                   
+                    sh 'curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh -s -- -b .'
+                    sh './trivy fs --exit-code 0 --severity HIGH,CRITICAL --no-progress .'
+                    
+                   
+                    withSonarQubeEnv('SonarQube-Server') { 
+                        sh "${SCANNER_HOME}/bin/sonar-scanner -Dsonar.projectKey=yaml-converter-backend -Dsonar.sources=. -Dsonar.python.version=3.12"
+                    }
+                }
+            }
+        }
+
+        
+        stage('Package Lambda') {
+            agent {
+                docker {
+                    image 'python:3.12-slim'
+                    args '-u 0' 
+                }
+            }
+            steps {
+                script {
+                    sh 'apt-get update && apt-get install -y zip'
+                    
+                  
+                    sh 'pip install -r requirements.txt -t .'
+                    
+                    
+                    sh 'zip -r deployment.zip converter.py lambda_function.py requirements.txt yaml/'
+                    
+                    echo "Package created. Size:"
+                    sh 'du -h deployment.zip'
+                }
+            }
+        }
+
+      
+        stage('Deploy to AWS') {
+            agent {
+                docker { image 'amazon/aws-cli' }
+            }
+            steps {
+                withCredentials([aws(credentialsId: 'aws-credentials', accessKeyVariable: 'AWS_ACCESS_KEY_ID', secretKeyVariable: 'AWS_SECRET_ACCESS_KEY')]) {
+                    sh "aws lambda update-function-code --function-name ${LAMBDA_FUNC_NAME} --zip-file fileb://deployment.zip --region ${AWS_DEFAULT_REGION}"
+                }
+            }
+        }
+    }
+}

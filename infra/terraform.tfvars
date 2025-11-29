@@ -1,0 +1,5 @@
+project_name          = "yaml-json-converter"
+aws_region            = "ap-south-1"
+domain_name           = "yourdomain.com"
+cloudflare_api_token  = "YOUR_TOKEN_HERE"
+cloudflare_account_id = "YOUR_ACCOUNT_ID"
