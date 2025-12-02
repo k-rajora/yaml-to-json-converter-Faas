@@ -1,3 +1,3 @@
-const API_BASE_URL = "https://r6apwm2myg.execute-api.ap-south-1.amazonaws.com";
+const API_BASE_URL = "https://9oe9srtrig.execute-api.ap-south-1.amazonaws.com";
 
 export default API_BASE_URL;
